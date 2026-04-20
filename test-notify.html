@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Notifications</title>
+</head>
+<body>
+    <button onclick="requestNotif()">اطلب الإذن</button>
+    <button onclick="sendNotif()">أرسل إشعار</button>
+
+    <script>
+        function requestNotif() {
+            Notification.requestPermission().then(perm => {
+                alert("النتيجة: " + perm);
+            });
+        }
+
+        function sendNotif() {
+            if (Notification.permission === "granted") {
+                new Notification("Test", {body: "اشتغلت!"});
+            } else {
+                alert("مفيش إذن");
+            }
+        }
+    </script>
+</body>
+</html>
