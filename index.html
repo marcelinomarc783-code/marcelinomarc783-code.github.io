@@ -1,0 +1,237 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#2c3e50">
+    <title>آية اليوم - كتابك المقدس</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary: #2c3e50; --gold: #c9a03d; }
+        body { font-family: 'Amiri', serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .card { background: rgba(255,255,255,0.95); padding: 35px 25px; border-radius: 35px; text-align: center; max-width: 500px; width: 100%; }
+        h1 { color: var(--primary); font-size: 1.8rem; }
+        .verse-text { font-size: 1.6rem; color: #222; margin: 20px 0; background: #f8f9fa; padding: 20px; border-radius: 20px; border-right: 5px solid var(--gold); }
+        .verse-ref { color: var(--gold); font-size: 1.1rem; }
+        .time-input { font-size: 1.2rem; padding: 12px; border: 2px solid var(--primary); border-radius: 50px; width: 85%; margin: 15px 0; text-align: center; }
+        .btn { background: linear-gradient(135deg, var(--primary), #1a252f); color: white; border: none; padding: 14px; border-radius: 50px; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn-secondary { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        #status { color: #27ae60; margin-top: 15px; background: #e8f5e9; padding: 8px; border-radius: 50px; display: none; }
+        #status.show { display: block; }
+        .loading { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--gold); border-radius: 50%; border-top-color: transparent; animation: spin 0.8s linear infinite; margin-left: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>📖 آية اليوم</h1>
+    <div class="verse-text" id="v-text"><span class="loading"></span> جاري تحميل الآية...</div>
+    <div class="verse-ref" id="v-ref"></div>
+    <hr>
+    <p>⏰ وقت التذكير اليومي:</p>
+    <input type="time" id="notify-time" class="time-input" value="08:00">
+    <button class="btn" id="setupBtn">🔔 فعّل الإشعارات اليومية</button>
+    <button class="btn btn-secondary" id="testBtn">✝ جرب التنبيه الآن</button>
+    <div id="status"></div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
+
+<script>
+    // ========== إعدادات Firebase ==========
+    const firebaseConfig = {
+        apiKey: "AIzaSyDiwwV4dE0GGkP_wBwzgY_zDrw3_dJEjRs",
+        authDomain: "dailybibleverse-71f31.firebaseapp.com",
+        projectId: "dailybibleverse-71f31",
+        storageBucket: "dailybibleverse-71f31.firebasestorage.app",
+        messagingSenderId: "930866590711",
+        appId: "1:930866590711:web:4e952f86d3e9afee4f34f2",
+        measurementId: "G-0QTCYQ5XPJ"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const messaging = firebase.messaging();
+    const VAPID_KEY = "NH0BAdBR6C6cTq7R3tfrCUWsbTHy-nRCeGFgQIvbMGM";
+
+    // ========== آيات احتياطية ==========
+    const fallbackVerses = [
+        { text: "لاَ تَخَفْ لأَنِّي مَعَكَ. لاَ تَتَلَفَّتْ لأَنِّي إِلهُكَ.", ref: "إشعياء 41:10" },
+        { text: "الرَّبُّ رَاعِيَّ فَلاَ يُعْوِزُنِي شَيْءٌ. فِي مَرَاعٍ خُضْرٍ يُرْبِضُنِي.", ref: "مزمور 23:1-2" },
+        { text: "أَنَا هُوَ الطَّرِيقُ وَالْحَقُّ وَالْحَيَاةُ.", ref: "يوحنا 14:6" },
+        { text: "أَسْتَطِيعُ كُلَّ شَيْءٍ فِي الْمَسِيحِ الَّذِي يُقَوِّينِي.", ref: "فيلبي 4:13" }
+    ];
+
+    // ========== دوال مساعدة ==========
+    function vibrate() { if (navigator.vibrate) navigator.vibrate([300, 100, 300]); }
+
+    async function fetchVerseFromAPI() {
+        try {
+            const randomBook = Math.floor(Math.random() * 66) + 1;
+            const randomChapter = Math.floor(Math.random() * 20) + 1;
+            const randomVerse = Math.floor(Math.random() * 10) + 1;
+            const res = await fetch(`https://arabic-bible.onrender.com/api?book=${randomBook}&ch=${randomChapter}&ver=${randomVerse}`);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            if (data && data.verse) {
+                return { text: data.verse, ref: `${data.bookName || 'الكتاب المقدس'} ${randomChapter}:${randomVerse}` };
+            }
+            throw new Error();
+        } catch(e) {
+            return fallbackVerses[Math.floor(Math.random() * fallbackVerses.length)];
+        }
+    }
+
+    async function loadVerse() {
+        const verse = await fetchVerseFromAPI();
+        document.getElementById('v-text').innerHTML = `"${verse.text}"`;
+        document.getElementById('v-ref').innerHTML = verse.ref;
+    }
+
+    // ========== إرسال إشعار (الطريقة القديمة الشغالة) ==========
+    async function sendNotification(title, bodyText) {
+        if (Notification.permission === "granted") {
+            const reg = await navigator.serviceWorker.ready;
+            reg.showNotification(title, {
+                body: bodyText,
+                icon: "https://cdn-icons-png.flaticon.com/512/2903/2903510.png",
+                vibrate: [200, 100, 200],
+                requireInteraction: true
+            });
+        }
+    }
+
+    // ========== طلب إذن Firebase (يضاف بدون ما يبوظ حاجة) ==========
+    async function requestFirebasePermission() {
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === "granted") {
+                const token = await messaging.getToken({ vapidKey: VAPID_KEY });
+                console.log("FCM Token:", token);
+                localStorage.setItem('fcm_token', token);
+            }
+        } catch(e) {
+            console.log("Firebase error:", e);
+        }
+    }
+
+    // ========== تفعيل التذكير ==========
+    async function setupReminder() {
+        const selectedTime = document.getElementById('notify-time').value;
+        if (!selectedTime) { alert("اختر وقت التذكير أولاً"); return; }
+        
+        // طلب الإذن (Firebase + Notification)
+        await requestFirebasePermission();
+        
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+            localStorage.setItem('verse_time', selectedTime);
+            
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `✅ تم التفعيل! هتجيلك آية يومياً الساعة ${selectedTime}`;
+            statusDiv.classList.add('show');
+            vibrate();
+            await sendNotification("✅ تم تفعيل التذكير", `ستصلك آية يومياً الساعة ${selectedTime}`);
+            setTimeout(() => statusDiv.classList.remove('show'), 4000);
+            startDailyReminder();
+        } else {
+            alert("لازم تسمح بالإشعارات");
+        }
+    }
+
+    // ========== تجربة التنبيه ==========
+    async function testNotification() {
+        console.log("Test button clicked");
+        
+        await requestFirebasePermission();
+        
+        if (Notification.permission === "granted") {
+            const verse = await fetchVerseFromAPI();
+            await sendNotification("📖 آية اليوم", `"${verse.text.substring(0, 100)}" - ${verse.ref}`);
+            document.getElementById('v-text').innerHTML = `"${verse.text}"`;
+            document.getElementById('v-ref').innerHTML = verse.ref;
+            vibrate();
+        } else {
+            const perm = await Notification.requestPermission();
+            if (perm === "granted") {
+                const verse = await fetchVerseFromAPI();
+                await sendNotification("📖 آية اليوم", `"${verse.text.substring(0, 100)}" - ${verse.ref}`);
+                vibrate();
+            } else {
+                alert("الرجاء السماح بالإشعارات");
+            }
+        }
+    }
+
+    // ========== التذكير اليومي ==========
+    let reminderInterval = null;
+    let reminderTimeout = null;
+
+    function startDailyReminder() {
+        if (reminderTimeout) clearTimeout(reminderTimeout);
+        if (reminderInterval) clearInterval(reminderInterval);
+
+        const savedTime = localStorage.getItem('verse_time');
+        if (!savedTime) return;
+
+        const [hours, minutes] = savedTime.split(':');
+        const now = new Date();
+        const target = new Date();
+        target.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+        let timeUntil = target - now;
+        if (timeUntil < 0) timeUntil += 24 * 60 * 60 * 1000;
+
+        reminderTimeout = setTimeout(async () => {
+            const verse = await fetchVerseFromAPI();
+            await sendNotification("📖 آية اليوم", `"${verse.text.substring(0, 100)}" - ${verse.ref}`);
+            document.getElementById('v-text').innerHTML = `"${verse.text}"`;
+            document.getElementById('v-ref').innerHTML = verse.ref;
+            vibrate();
+            
+            reminderInterval = setInterval(async () => {
+                const newVerse = await fetchVerseFromAPI();
+                await sendNotification("📖 آية اليوم", `"${newVerse.text.substring(0, 100)}" - ${newVerse.ref}`);
+                document.getElementById('v-text').innerHTML = `"${newVerse.text}"`;
+                document.getElementById('v-ref').innerHTML = newVerse.ref;
+                vibrate();
+            }, 24 * 60 * 60 * 1000);
+        }, timeUntil);
+    }
+
+    // ========== ربط الأزرار ==========
+    document.getElementById('setupBtn').onclick = setupReminder;
+    document.getElementById('testBtn').onclick = testNotification;
+
+    // ========== تحميل الصفحة ==========
+    window.onload = async () => {
+        await loadVerse();
+        
+        const savedTime = localStorage.getItem('verse_time');
+        if (savedTime) {
+            document.getElementById('notify-time').value = savedTime;
+            document.getElementById('status').innerHTML = `✅ النظام نشط - التذكير الساعة ${savedTime}`;
+            document.getElementById('status').classList.add('show');
+            startDailyReminder();
+            setTimeout(() => document.getElementById('status').classList.remove('show'), 3000);
+        }
+        
+        // تسجيل Service Worker
+        if ('serviceWorker' in navigator) {
+            try {
+                await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                console.log("Service Worker registered");
+            } catch(e) {
+                console.log("SW error:", e);
+            }
+        }
+    };
+</script>
+</body>
+</html>
