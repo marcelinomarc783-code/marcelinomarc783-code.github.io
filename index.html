@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#2c3e50">
+    <title>آية اليوم - كتابك المقدس</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+      import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-messaging.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDiwwV4dE0GGkP_wBwzgY_zDrw3_dJEjRs",
+        authDomain: "dailybibleverse-71f31.firebaseapp.com",
+        projectId: "dailybibleverse-71f31",
+        storageBucket: "dailybibleverse-71f31.firebasestorage.app",
+        messagingSenderId: "930866590711",
+        appId: "1:930866590711:web:4e952f86d3e9afee4f34f2",
+        measurementId: "G-0QTCYQ5XPJ"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const messaging = getMessaging(app);
+
+      // طلب الإذن والحصول على Token
+      async function requestFirebasePermission() {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+          try {
+            const token = await getToken(messaging, { 
+              vapidKey: "NH0BAdBR6C6cTq7R3tfrCUWsbTHy-nRCeGFgQIvbMGM" 
+            });
+            console.log("FCM Token:", token);
+            localStorage.setItem('fcm_token', token);
+          } catch(e) {
+            console.log("Error getting token:", e);
+          }
+        }
+      }
+
+      // استقبال الإشعارات في المقدمة
+      onMessage(messaging, (payload) => {
+        console.log("Message received:", payload);
+        new Notification(payload.notification.title, {
+          body: payload.notification.body,
+          icon: payload.notification.icon || "https://cdn-icons-png.flaticon.com/512/2903/2903510.png"
+        });
+      });
+
+      window.requestFirebasePermission = requestFirebasePermission;
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary: #2c3e50; --gold: #c9a03d; }
+        body { font-family: 'Amiri', serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .card { background: rgba(255,255,255,0.95); padding: 35px 25px; border-radius: 35px; text-align: center; max-width: 500px; width: 100%; }
+        h1 { color: var(--primary); font-size: 1.8rem; }
+        .verse-text { font-size: 1.6rem; color: #222; margin: 20px 0; background: #f8f9fa; padding: 20px; border-radius: 20px; border-right: 5px solid var(--gold); }
+        .verse-ref { color: var(--gold); font-size: 1.1rem; }
+        .time-input { font-size: 1.2rem; padding: 12px; border: 2px solid var(--primary); border-radius: 50px; width: 85%; margin: 15px 0; text-align: center; }
+        .btn { background: linear-gradient(135deg, var(--primary), #1a252f); color: white; border: none; padding: 14px; border-radius: 50px; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn-secondary { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        #status { color: #27ae60; margin-top: 15px; background: #e8f5e9; padding: 8px; border-radius: 50px; display: none; }
+        #status.show { display: block; }
+        .loading { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--gold); border-radius: 50%; border-top-color: transparent; animation: spin 0.8s linear infinite; margin-left: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>📖 آية اليوم</h1>
+    <div class="verse-text" id="v-text"><span class="loading"></span> جاري تحميل الآية...</div>
+    <div class="verse-ref" id="v-ref"></div>
+    <hr>
+    <p>⏰ وقت التذكير اليومي:</p>
+    <input type="time" id="notify-time" class="time-input" value="08:00">
+    <button class="btn" id="setupBtn">🔔 فعّل الإشعارات اليومية</button>
+    <button class="btn btn-secondary" id="testBtn">✝ جرب التنبيه الآن</button>
+    <div id="status"></div>
+</div>
+
+<script>
+    const fallbackVerses = [
+        { text: "لاَ تَخَفْ لأَنِّي مَعَكَ. لاَ تَتَلَفَّتْ لأَنِّي إِلهُكَ.", ref: "إشعياء 41:10" },
+        { text: "الرَّبُّ رَاعِيَّ فَلاَ يُعْوِزُنِي شَيْءٌ.", ref: "مزمور 23:1" },
+        { text: "أَنَا هُوَ الطَّرِيقُ وَالْحَقُّ وَالْحَيَاةُ.", ref: "يوحنا 14:6" }
+    ];
+
+    function vibrate() { if (navigator.vibrate) navigator.vibrate([300, 100, 300]); }
+
+    async function fetchVerseFromAPI() {
+        try {
+            const randomBook = Math.floor(Math.random() * 66) + 1;
+            const randomChapter = Math.floor(Math.random() * 20) + 1;
+            const randomVerse = Math.floor(Math.random() * 10) + 1;
+            const res = await fetch(`https://arabic-bible.onrender.com/api?book=${randomBook}&ch=${randomChapter}&ver=${randomVerse}`);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            return { text: data.verse, ref: `${data.bookName || 'الكتاب المقدس'} ${randomChapter}:${randomVerse}` };
+        } catch(e) {
+            return fallbackVerses[Math.floor(Math.random() * fallbackVerses.length)];
+        }
+    }
+
+    async function loadVerse() {
+        const verse = await fetchVerseFromAPI();
+        document.getElementById('v-text').innerHTML = `"${verse.text}"`;
+        document.getElementById('v-ref').innerHTML = verse.ref;
+    }
+
+    async function sendNotification(title, bodyText) {
+        if (Notification.permission === "granted") {
+            const reg = await navigator.serviceWorker.ready;
+            reg.showNotification(title, {
+                body: bodyText,
+                icon: "https://cdn-icons-png.flaticon.com/512/2903/2903510.png",
+                vibrate: [200, 100, 200],
+                requireInteraction: true
+            });
+        }
+    }
+
+    async function setupReminder() {
+        const selectedTime = document.getElementById('notify-time').value;
+        if (!selectedTime) { alert("اختر وقت التذكير أولاً"); return; }
+        
+        // طلب إذن Firebase
+        if (window.requestFirebasePermission) {
+            await window.requestFirebasePermission();
+        }
+        
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+            localStorage.setItem('verse_time', selectedTime);
+            
+            document.getElementById('status').innerHTML = `✅ تم التفعيل! هتجيلك آية يومياً الساعة ${selectedTime}`;
+            document.getElementById('status').classList.add('show');
+            vibrate();
+            await sendNotification("✅ تم تفعيل التذكير", `ستصلك آية يومياً الساعة ${selectedTime}`);
+            setTimeout(() => document.getElementById('status').classList.remove('show'), 4000);
+            startDailyReminder();
+        } else {
+            alert("لازم تسمح بالإشعارات");
+        }
+    }
+
+    async function handleDailyTrigger() {
+        const verse = await fetchVerseFromAPI();
+        await sendNotification("📖 آية اليوم", `"${verse.text.substring(0, 100)}" - ${verse.ref}`);
+        document.getElementById('v-text').innerHTML = `"${verse.text}"`;
+        document.getElementById('v-ref').innerHTML = verse.ref;
+        vibrate();
+    }
+
+    let reminderInterval = null;
+    let reminderTimeout = null;
+
+    function startDailyReminder() {
+        if (reminderTimeout) clearTimeout(reminderTimeout);
+        if (reminderInterval) clearInterval(reminderInterval);
+
+        const savedTime = localStorage.getItem('verse_time');
+        if (!savedTime) return;
+
+        const [hours, minutes] = savedTime.split(':');
+        const now = new Date();
+        const target = new Date();
+        target.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+        let timeUntil = target - now;
+        if (timeUntil < 0) timeUntil += 24 * 60 * 60 * 1000;
+
+        reminderTimeout = setTimeout(() => {
+            handleDailyTrigger();
+            reminderInterval = setInterval(() => {
+                handleDailyTrigger();
+            }, 24 * 60 * 60 * 1000);
+        }, timeUntil);
+    }
+
+    document.getElementById('setupBtn').onclick = setupReminder;
+    document.getElementById('testBtn').onclick = async () => {
+        if (Notification.permission === "granted") await handleDailyTrigger();
+        else await setupReminder();
+    };
+
+    window.onload = async () => {
+        await loadVerse();
+        const savedTime = localStorage.getItem('verse_time');
+        if (savedTime) {
+            document.getElementById('notify-time').value = savedTime;
+            startDailyReminder();
+        }
+    };
+</script>
+</body>
+</html>
