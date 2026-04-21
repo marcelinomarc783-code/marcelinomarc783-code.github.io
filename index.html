@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#ffffff">
+    <title>مكتبة الآيات - كتابك المقدس</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Amiri', serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* صليب خلفية شفاف */
+        body::before {
+            content: "✝";
+            position: fixed;
+            font-size: 350px;
+            opacity: 0.03;
+            bottom: -80px;
+            left: -80px;
+            pointer-events: none;
+            font-family: serif;
+            color: #c9a03d;
+        }
+
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        /* الهيدر بالصليب الذهبي */
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            background: white;
+            border-radius: 60px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid rgba(201, 160, 61, 0.2);
+        }
+
+        .cross-icon {
+            font-size: 50px;
+            color: #c9a03d;
+            margin-bottom: 10px;
+            display: inline-block;
+            animation: gentleGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes gentleGlow {
+            0%, 100% { text-shadow: 0 0 5px rgba(201, 160, 61, 0.3); }
+            50% { text-shadow: 0 0 15px rgba(201, 160, 61, 0.5); }
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            color: #2c3e50;
+            letter-spacing: -0.5px;
+        }
+
+        .header h1 span {
+            color: #c9a03d;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        /* التبويبات */
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 60px;
+            padding: 5px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(201, 160, 61, 0.2);
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            color: #7f8c8d;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #c9a03d, #b8860b);
+            color: white;
+            box-shadow: 0 3px 10px rgba(201, 160, 61, 0.3);
+        }
+
+        /* المحتوى */
+        .content {
+            display: none;
+            background: white;
+            border-radius: 35px;
+            padding: 30px;
+            min-height: 400px;
+            animation: fadeIn 0.4s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid rgba(201, 160, 61, 0.15);
+        }
+
+        .content.active-content {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* بطاقة الآية */
+        .verse-card {
+            background: #fefefe;
+            border-radius: 25px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-right: 5px solid #c9a03d;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+        }
+
+        .verse-text {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .verse-ref {
+            color: #c9a03d;
+            font-size: 1rem;
+            font-weight: bold;
+            text-align: left;
+        }
+
+        /* الأزرار */
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #2c3e50, #1a252f);
+            color: white;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Amiri', serif;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #c9a03d, #b8860b);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        /* المفضلة */
+        .favorites-section {
+            margin-top: 25px;
+            background: #fafafa;
+            border-radius: 25px;
+            padding: 20px;
+        }
+
+        .favorites-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #c9a03d;
+            display: inline-block;
+        }
+
+        .favorite-item {
+            background: white;
+            border-radius: 15px;
+            padding: 12px;
+            margin: 10px 0;
+            border-right: 3px solid #c9a03d;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .favorite-text {
+            font-size: 0.95rem;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .favorite-ref {
+            color: #c9a03d;
+            font-size: 0.8rem;
+        }
+
+        .delete-fav, .share-fav {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            float: left;
+            font-size: 0.7rem;
+            margin-left: 8px;
+        }
+
+        .share-fav {
+            background: #25D366;
+        }
+
+        /* التقويم القبطي */
+        .coptic-info {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .coptic-date {
+            font-size: 2rem;
+            color: #c9a03d;
+            margin: 20px 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #c9a03d;
+        }
+
+        .loading::after {
+            content: "✝";
+            display: inline-block;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 550px) {
+            .verse-text { font-size: 1.2rem; }
+            .tab { font-size: 0.8rem; padding: 8px; }
+            .header h1 { font-size: 1.5rem; }
+            .cross-icon { font-size: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="cross-icon">✝</div>
+        <h1>📖 <span>مكتبة</span> الآيات</h1>
+        <p>آيات من الكتاب المقدس - العهد القديم والجديد</p>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" data-tab="verses">📖 آيات</div>
+        <div class="tab" data-tab="coptic">📅 تقويم قبطي</div>
+    </div>
+
+    <!-- تبويب الآيات -->
+    <div id="verses" class="content active-content">
+        <div class="verse-card">
+            <div class="verse-text" id="verseText"><span class="loading"></span> جاري تحميل الآية...</div>
+            <div class="verse-ref" id="verseRef"></div>
+            <div class="actions">
+                <button class="btn" onclick="loadNewVerse()">🔄 آية جديدة</button>
+                <button class="btn btn-gold" onclick="saveCurrentVerse()">❤️ حفظ للمفضلة</button>
+                <button class="btn" onclick="shareCurrentVerse()">📤 مشاركة</button>
+            </div>
+        </div>
+        <div class="favorites-section">
+            <h3>⭐ آياتي المفضلة</h3>
+            <div id="favVersesList"></div>
+        </div>
+    </div>
+
+    <!-- تبويب تقويم قبطي -->
+    <div id="coptic" class="content">
+        <div class="coptic-info" id="copticInfo"></div>
+    </div>
+</div>
+
+<script>
+    // آيات احتياطية
+    const fallbackVerses = [
+        { text: "لاَ تَخَفْ لأَنِّي مَعَكَ. لاَ تَتَلَفَّتْ لأَنِّي إِلهُكَ.", ref: "إشعياء 41:10" },
+        { text: "الرَّبُّ رَاعِيَّ فَلاَ يُعْوِزُنِي شَيْءٌ.", ref: "مزمور 23:1" },
+        { text: "أَنَا هُوَ الطَّرِيقُ وَالْحَقُّ وَالْحَيَاةُ.", ref: "يوحنا 14:6" },
+        { text: "أَسْتَطِيعُ كُلَّ شَيْءٍ فِي الْمَسِيحِ الَّذِي يُقَوِّينِي.", ref: "فيلبي 4:13" },
+        { text: "أَحْبَبْتُكَ حُبًّا أَبَدِيًّا.", ref: "إرميا 31:3" }
+    ];
+
+    let currentVerse = { text: "", ref: "" };
+
+    // دالة جلب آية من API (الكتاب المقدس كامل)
+    async function fetchVerseFromAPI() {
+        const books = Array.from({length: 66}, (_, i) => i + 1);
+        const randomBook = books[Math.floor(Math.random() * books.length)];
+        const randomChapter = Math.floor(Math.random() * 50) + 1;
+        const randomVerse = Math.floor(Math.random() * 50) + 1;
+        
+        try {
+            const response = await fetch(`https://arabic-bible.onrender.com/api?book=${randomBook}&ch=${randomChapter}&ver=${randomVerse}`);
+            if (!response.ok) throw new Error('API failed');
+            const data = await response.json();
+            if (data && data.verse) {
+                return { text: data.verse, ref: `${data.bookName || 'الكتاب المقدس'} ${randomChapter}:${randomVerse}` };
+            }
+            throw new Error('No verse data');
+        } catch(error) {
+            return fallbackVerses[Math.floor(Math.random() * fallbackVerses.length)];
+        }
+    }
+
+    async function loadNewVerse() {
+        const verseText = document.getElementById('verseText');
+        const verseRef = document.getElementById('verseRef');
+        
+        verseText.innerHTML = '<span class="loading"></span> جاري تحميل الآية...';
+        verseRef.innerHTML = '';
+        
+        const verse = await fetchVerseFromAPI();
+        currentVerse = verse;
+        
+        verseText.innerHTML = `"${verse.text}"`;
+        verseRef.innerHTML = verse.ref;
+    }
+
+    function saveCurrentVerse() {
+        if (!currentVerse.text) return;
+        let fav = JSON.parse(localStorage.getItem('fav_verses') || '[]');
+        if (fav.some(v => v.text === currentVerse.text)) {
+            alert("⚠️ هذه الآية موجودة بالفعل في المفضلة");
+            return;
+        }
+        fav.push(currentVerse);
+        localStorage.setItem('fav_verses', JSON.stringify(fav));
+        displayFavVerses();
+        alert("✅ تم حفظ الآية");
+        if (navigator.vibrate) navigator.vibrate(100);
+    }
+
+    function displayFavVerses() {
+        const fav = JSON.parse(localStorage.getItem('fav_verses') || '[]');
+        const container = document.getElementById('favVersesList');
+        if (fav.length === 0) {
+            container.innerHTML = '<p style="color:#7f8c8d; text-align:center;">✨ لا توجد آيات محفوظة بعد</p>';
+            return;
+        }
+        container.innerHTML = fav.map((v, i) => `
+            <div class="favorite-item">
+                <button class="delete-fav" onclick="deleteFavVerse(${i})">🗑 حذف</button>
+                <button class="share-fav" onclick="shareVerseText('${v.text.replace(/'/g, "\\'")}', '${v.ref.replace(/'/g, "\\'")}')">📤 مشاركة</button>
+                <div class="favorite-text">"${v.text}"</div>
+                <div class="favorite-ref">${v.ref}</div>
+            </div>
+        `).join('');
+    }
+
+    function deleteFavVerse(index) {
+        let fav = JSON.parse(localStorage.getItem('fav_verses') || '[]');
+        fav.splice(index, 1);
+        localStorage.setItem('fav_verses', JSON.stringify(fav));
+        displayFavVerses();
+        if (navigator.vibrate) navigator.vibrate(100);
+    }
+
+    function shareCurrentVerse() { 
+        if (currentVerse.text) shareVerseText(currentVerse.text, currentVerse.ref); 
+    }
+    
+    function shareVerseText(text, ref) {
+        const shareText = `"${text}"\n📖 ${ref}`;
+        if (navigator.share) {
+            navigator.share({ title: 'آية من الكتاب المقدس', text: shareText });
+        } else {
+            navigator.clipboard.writeText(shareText);
+            alert("✅ تم نسخ الآية");
+        }
+    }
+
+    // ========== تقويم قبطي ==========
+    function getCopticDate() {
+        const today = new Date();
+        const gregorian = today.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+        const copticMonths = ["توت", "بابة", "هاتور", "كيهك", "طوبة", "أمشير", "برمهات", "برمودة", "بشنس", "بؤونة", "أبيب", "مسرى", "نسيئ"];
+        const copticYear = today.getFullYear() - 284;
+        const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
+        let copticMonth = Math.floor((dayOfYear - 1) / 30);
+        let copticDay = (dayOfYear - 1) % 30 + 1;
+        if (copticMonth >= 12) { copticMonth = 12; copticDay = dayOfYear - 360; }
+        if (copticDay < 1) copticDay = 1;
+        return { gregorian, coptic: `${copticDay} ${copticMonths[copticMonth]} ${copticYear}` };
+    }
+
+    function displayCopticInfo() {
+        const date = getCopticDate();
+        document.getElementById('copticInfo').innerHTML = `
+            <div class="verse-card">
+                <div class="coptic-date">📅 ${date.coptic}</div>
+                <div class="verse-text" style="font-size:1.2rem">الموافق: ${date.gregorian}</div>
+                <hr style="margin: 15px 0">
+                <div class="verse-text" style="font-size:1rem;">✝ "اذكروا أعمال الرب التي صنعها، عجائبه وأحكام فمه." ✝</div>
+                <div class="verse-ref">مزمور 105: 5</div>
+                <div class="actions">
+                    <button class="btn" onclick="shareCoptic()">📤 مشاركة التاريخ</button>
+                </div>
+            </div>
+        `;
+    }
+
+    function shareCoptic() {
+        const date = getCopticDate();
+        const text = `📅 اليوم في التقويم القبطي: ${date.coptic}\n📅 الموافق: ${date.gregorian}`;
+        if (navigator.share) navigator.share({ title: 'التقويم القبطي', text: text });
+        else navigator.clipboard.writeText(text) && alert("✅ تم نسخ التاريخ");
+    }
+
+    // ========== التبويبات ==========
+    function setupTabs() {
+        const tabs = document.querySelectorAll('.tab');
+        const contents = document.querySelectorAll('.content');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                contents.forEach(c => c.classList.remove('active-content'));
+                document.getElementById(tabId).classList.add('active-content');
+            });
+        });
+    }
+
+    // ========== التهيئة ==========
+    window.onload = () => {
+        loadNewVerse();
+        displayFavVerses();
+        displayCopticInfo();
+        setupTabs();
+    };
+</script>
+</body>
+</html>
